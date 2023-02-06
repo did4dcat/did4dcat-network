@@ -1,0 +1,110 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+volumes:
+  orderer-volume:
+  peer-volume:
+
+networks:
+  did4dcat:
+    external:
+      name: did4dcat
+
+services:
+  orderer:
+    container_name: orderer-${DOMAIN}
+    extends:
+      file: base.yaml
+      service: orderer-base
+    environment:
+      - SYS_CHANNEL=$SYS_CHANNEL
+      - ORDERER_GENERAL_LOCALMSPID=${MSP}
+      - ORDERER_GENERAL_LISTENPORT=${ORDERER_PORT_1} # 7050, 8050, 9050, 10050
+    volumes:
+      - ../channel-artifacts/genesis.block:/var/hyperledger/orderer/orderer.genesis.block
+      - ../crypto-config/organizations/${DOMAIN}/peers/orderer-${DOMAIN}/msp:/var/hyperledger/orderer/msp
+      - ../crypto-config/organizations/${DOMAIN}/peers/orderer-${DOMAIN}/tls/:/var/hyperledger/orderer/tls
+      - orderer-volume:/var/hyperledger/production/orderer
+    ports:
+      - ${ORDERER_PORT_1}:${ORDERER_PORT_1}
+    networks:
+      - did4dcat
+
+  peer:
+    container_name: peer-${DOMAIN}
+    extends:
+      file: base.yaml
+      service: peer-base
+    environment:
+      - SYS_CHANNEL=$SYS_CHANNEL
+      - CORE_PEER_ID=peer-${DOMAIN}
+      - CORE_PEER_ADDRESS=peer-${DOMAIN}:${PEER_PORT_1} # 7051, 8051, 9051, 10051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:${PEER_PORT_1}
+      - CORE_PEER_CHAINCODEADDRESS=peer-${DOMAIN}:${PEER_PORT_2} # 7052, 8052, 9052, 10052
+      - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:${PEER_PORT_2}
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer-${DOMAIN}:${PEER_PORT_1}
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer-${DOMAIN}:${PEER_PORT_1}
+      - CORE_PEER_LOCALMSPID=${MSP}
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../crypto-config/organizations/${DOMAIN}/peers/peer-${DOMAIN}/msp:/etc/hyperledger/fabric/msp
+        - ../crypto-config/organizations/${DOMAIN}/peers/peer-${DOMAIN}/tls:/etc/hyperledger/fabric/tls
+        - peer-volume:/var/hyperledger/production
+    ports:
+      - ${PEER_PORT_1}:${PEER_PORT_1}
+    networks:
+      - did4dcat
+
+  ca:
+    container_name: ca-${DOMAIN}
+    extends:
+      file: base.yaml
+      service: ca-base
+    environment:
+      - FABRIC_CA_SERVER_CA_NAME=ca-${ORG}
+      - FABRIC_CA_SERVER_PORT=${CA_PORT_1} # 7054, 8054, 9054, 10054
+      - FABRIC_CA_SERVER_OPERATIONS_LISTENADDRESS=0.0.0.0:${CA_PORT_2} # 17054, 18054, 19054, 20054
+    ports:
+      - ${CA_PORT_1}:${CA_PORT_1}
+      - ${CA_PORT_2}:${CA_PORT_2}
+    command: sh -c 'fabric-ca-server start -b admin:adminpw -d' # --csr.hosts ca-${DOMAIN}'
+    volumes:
+      - ../crypto-config/organizations/${DOMAIN}:/etc/hyperledger/fabric-ca-server
+    networks:
+      - did4dcat
+
+  cli:
+    container_name: cli-${DOMAIN}
+    image: hyperledger/fabric-tools:${FABRIC_VERSION}
+    tty: true
+    stdin_open: true
+    environment:
+      - SYS_CHANNEL=$SYS_CHANNEL
+      - GOPATH=/opt/gopath
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      #- FABRIC_LOGGING_SPEC=DEBUG
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_PEER_ID=cli
+      - CORE_PEER_ADDRESS=peer-${DOMAIN}:${PEER_PORT_1}
+      - CORE_PEER_LOCALMSPID=${MSP}
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/organizations/${DOMAIN}/peers/peer-${DOMAIN}/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/organizations/${DOMAIN}/peers/peer-${DOMAIN}/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/organizations/${DOMAIN}/peers/peer-${DOMAIN}/tls/ca.crt
+      - CORE_PEER_MSPCONFIGPATH=/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/organizations/${DOMAIN}/users/Admin@${DOMAIN}/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+        - /var/run/:/host/var/run/
+        - ../chaincode:/opt/gopath/src/github.com/hyperledger/fabric/peer/chaincode
+        - ../crypto-config:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto/
+        - ../scripts:/opt/gopath/src/github.com/hyperledger/fabric/peer/scripts/
+        - ../channel-artifacts:/opt/gopath/src/github.com/hyperledger/fabric/peer/channel-artifacts
+        - ../configtx.yaml:/opt/gopath/src/github.com/hyperledger/fabric/peer/configtx.yaml
+        - ../crypto-config.yaml:/opt/gopath/src/github.com/hyperledger/fabric/peer/crypto-config.yaml
+    networks:
+      - did4dcat
