@@ -56,6 +56,7 @@ services:
         - peer-volume:/var/hyperledger/production
     ports:
       - ${PEER_PORT_1}:${PEER_PORT_1}
+      - ${PEER_PORT_2}:${PEER_PORT_2}
     networks:
       - did4dcat
 
