@@ -16,15 +16,15 @@ FABRIC_CA_VERSION=1.5
 SYS_CHANNEL=did4dcat-sys-channel
 APP_CHANNEL=did4dcat
 
-PACKAGE_ID=did4dcat_1.0.0:4a0da93f3196b512842cbc514c4b17cd1a8ca0935565c462199c5e778113b1f3
+PACKAGE_ID=did4dcat_1.0.0:76236e47ab20f2a0437ed32de8bad591c4f927c770a48f625798d7cb35edf24f
 CC_NAME=did4dcat
 CC_VERSION=1.0.0
 CC_SEQUENCE=1
 
 ORG_IDS=(0 1 2 3 4)
-ORG_NAMES=(org1 org2 org3 org4 org5)
-ORG_MSPS=(Org1MSP Org2MSP Org3MSP Org4MSP Org5MSP)
-ORG_DOMAINS=(did4dcat.example-org1.org did4dcat.example-org2.org did4dcat.example-org3.org did4dcat.example-org4.org did4dcat.example-org5.org)
+ORG_NAMES=(glass01 glass02 glass03 glass04 glass05)
+ORG_MSPS=(Glass01MSP Glass02MSP Glass03MSP Glass04MSP Glass05MSP)
+ORG_DOMAINS=(glass01.fokus.fraunhofer.de glass02.fokus.fraunhofer.de glass03.fokus.fraunhofer.de glass04.fokus.fraunhofer.de glass05.fokus.fraunhofer.de)
 ORG_ORDERER_PORTS_1=(7050 8050 9050 10050 11050)
 ORG_PEER_PORTS_1=(7051 8051 9051 10051 11051)
 ORG_PEER_PORTS_2=(7052 8052 9052 10052 11052)
